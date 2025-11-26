@@ -1,0 +1,33 @@
+name: 浏览器自动化脚本
+
+on:
+  workflow_dispatch:  # 手动触发
+  schedule:
+    - cron: '0 8 * * *'  # 每天 UTC 时间 8:00 运行
+
+jobs:
+  automate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run automation script
+      env:
+        PHONE_NUMBER: ${{ secrets.PHONE_NUMBER }}
+        PASSWORD: ${{ secrets.PASSWORD }}
+        MOJINYUN_API_KEY: ${{ secrets.MOJINYUN_API_KEY }}
+        MOJINYUN_SIGNATURE: ${{ secrets.MOJINYUN_SIGNATURE }}
+        PUSH_API_URL: ${{ secrets.PUSH_API_URL }}
+      run: node scripts/automation.js
