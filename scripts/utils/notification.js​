@@ -1,0 +1,30 @@
+const axios = require('axios');
+
+async function sendNotification(title, content) {
+  try {
+    if (!process.env.PUSH_API_URL) {
+      console.log('未设置推送API地址，跳过通知发送');
+      return;
+    }
+
+    const message = {
+      title: title,
+      content: content.substring(0, 1000)  // 限制内容长度
+    };
+
+    await axios.post(process.env.PUSH_API_URL, 
+      `title=${encodeURIComponent(message.title)}&content=${encodeURIComponent(message.content)}`,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+    
+    console.log('通知发送成功');
+  } catch (error) {
+    console.warn('发送通知失败:', error.message);
+  }
+}
+
+module.exports = { sendNotification };
