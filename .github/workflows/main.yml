@@ -1,9 +1,9 @@
 name: 浏览器自动化脚本
 
 on:
-  workflow_dispatch:  # 手动触发
+  workflow_dispatch:
   schedule:
-    - cron: '0 8 * * *'  # 每天 UTC 时间 8:00 运行
+    - cron: '0 8 * * *'
 
 jobs:
   automate:
@@ -17,11 +17,20 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: '**/package-lock.json'
+        # 移除 cache 相关配置
     
     - name: Install dependencies
       run: npm ci
+      # 添加缓存配置到这里
+      env:
+        cache-name: cache-node-modules
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
     
     - name: Run automation script
       env:
