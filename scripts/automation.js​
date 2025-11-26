@@ -1,0 +1,110 @@
+const puppeteer = require('puppeteer');
+const { setProxy } = require('./utils/proxy');
+const { sendNotification } = require('./utils/notification');
+
+async function runAutomation() {
+  let browser;
+  
+  try {
+    console.log('开始执行自动化脚本...');
+    
+    // 启动浏览器
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu'
+      ]
+    });
+
+    const page = await browser.newPage();
+    
+    // 设置视口大小
+    await page.setViewport({ width: 1280, height: 720 });
+    
+    // 设置用户代理
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+
+    // 1. 设置代理
+    console.log('设置代理...');
+    await setProxy(page);
+    
+    // 2. 导航到登录页面
+    console.log('导航到登录页面...');
+    await page.goto('https://www.skymz.com/#/login', { 
+      waitUntil: 'networkidle2',
+      timeout: 30000 
+    });
+    
+    await page.waitForTimeout(1000);
+
+    // 3. 输入登录信息
+    console.log('输入登录信息...');
+    await page.waitForSelector('input[placeholder="请输入手机号"]', { timeout: 10000 });
+    await page.type('input[placeholder="请输入手机号"]', process.env.PHONE_NUMBER, { delay: 100 });
+    
+    await page.waitForSelector('input[type="password"][placeholder="请输入密码"]', { timeout: 10000 });
+    await page.type('input[type="password"][placeholder="请输入密码"]', process.env.PASSWORD, { delay: 100 });
+
+    // 4. 点击登录按钮
+    console.log('点击登录按钮...');
+    await page.waitForSelector('button.primary-btn', { timeout: 10000 });
+    await page.click('button.primary-btn');
+    await page.waitForTimeout(2000);
+
+    // 5. 签到操作
+    console.log('执行签到操作...');
+    try {
+      await page.waitForSelector('img[src*="sign.png"]', { timeout: 5000 });
+      await page.click('img[src*="sign.png"]');
+      await page.waitForTimeout(2000);
+      
+      await page.waitForSelector('button.primary-cta', { timeout: 5000 });
+      await page.click('button.primary-cta');
+    } catch (error) {
+      console.log('签到按钮未找到或已签到:', error.message);
+    }
+
+    // 6. 导航到目标页面
+    console.log('导航到目标页面...');
+    await page.goto('https://ipin.io/zh', { 
+      waitUntil: 'networkidle2',
+      timeout: 30000 
+    });
+    await page.waitForTimeout(15000);
+
+    // 7. 获取页面内容
+    console.log('获取页面内容...');
+    const pageText = await page.evaluate(() => document.body.innerText);
+    
+    // 8. 发送通知
+    console.log('发送通知...');
+    await sendNotification('自动化脚本执行成功', pageText);
+    
+    console.log('自动化脚本执行完成');
+
+  } catch (error) {
+    console.error('执行过程中出错:', error);
+    await sendNotification('自动化脚本执行失败', error.message);
+    throw error;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+}
+
+// 执行主函数
+if (require.main === module) {
+  runAutomation().catch(error => {
+    console.error('脚本执行失败:', error);
+    process.exit(1);
+  });
+}
+
+module.exports = { runAutomation };
