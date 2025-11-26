@@ -1,0 +1,17 @@
+{
+  "name": "github-actions-automation",
+  "version": "1.0.0",
+  "description": "GitHub Actions 浏览器自动化脚本",
+  "main": "scripts/automation.js",
+  "scripts": {
+    "start": "node scripts/automation.js",
+    "test": "echo \"测试脚本\""
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0",
+    "axios": "^1.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
